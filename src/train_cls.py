@@ -24,6 +24,8 @@ parser.add_argument('--clip', default='drop7', help='clip the network at this la
 parser.add_argument('--train-from', default=None, help='Train only layers after this layer')
 parser.add_argument('--random-from', default='drop7', help='Initialize all layers after this layer randomly')
 parser.add_argument('--scale', type=float, default=1.0, help='Scale of the input data')
+parser.add_argument('--min-scale', type=float, default=0.5, help='Minimum scale transformation of image')
+parser.add_argument('--max-scale', type=float, default=2.0, help='Maximum scale transformation of image')
 
 args = parser.parse_args()
 
@@ -50,7 +52,7 @@ model = load.ProtoDesc(args.prototxt)
 
 # Create the training net
 ns = NetSpec()
-ns.data, ns.cls = dataLayer(args.voc_dir, output_dir, batch_size=args.bs, transform_param=dict(crop_size=model.input_dim[-1], min_scale=0.5, max_scale=2.0, mean_value=[104,117,123], mirror=True, scale=args.scale))
+ns.data, ns.cls = dataLayer(args.voc_dir, output_dir, batch_size=args.bs, transform_param=dict(crop_size=model.input_dim[-1], min_scale=args.min_scale, max_scale=args.max_scale, mean_value=[104,117,123], mirror=True, scale=args.scale))
 
 ns.fc8  = L.InnerProduct( model(data=ns.data, clip=args.clip), num_output=20, name='fc8_cls')
 ns.loss = Py.SigmoidCrossEntropyLoss(ns.fc8, ns.cls, ignore_label=255, loss_weight=1)
@@ -106,7 +108,7 @@ for N_CROP in [1, 10]:
 	for t in ['test', 'train']:
 		# Specify the eval net
 		ns = NetSpec()
-		ns.data, ns.cls = dataLayer(args.voc_dir, output_dir, batch_size=1, transform_param=dict(crop_size=model.input_dim[-1], min_scale=0.5, max_scale=2.0, mean_value=[104,117,123], mirror=True, scale=args.scale), image_set=t)
+		ns.data, ns.cls = dataLayer(args.voc_dir, output_dir, batch_size=1, transform_param=dict(crop_size=model.input_dim[-1], min_scale=args.min_scale, max_scale=args.max_scale, mean_value=[104,117,123], mirror=True, scale=args.scale), image_set=t)
 		ns.fc8  = L.InnerProduct( model(data=ns.data, clip=args.clip), num_output=20, name='fc8_cls')
 
 		# Create the eval net

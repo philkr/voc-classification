@@ -41,17 +41,10 @@ class Solver:
 			else:
 				solver_str += '%s: %f\n'%(i, kwargs[i])
 		self.solver = caffe.get_solver_from_string(solver_str)
-		self.solver.add_callback(self.on_start, self.on_gradient)
 
 		self.log = None
 		if log_file:
 			self.log = open(log_file, 'w')
-
-	def on_start(self):
-		pass
-
-	def on_gradient(self):
-		pass
 
 	def on_display(self):
 		pass
@@ -65,22 +58,23 @@ class Solver:
 
 	def try_stop(self):
 		from time import time
-		if time() - self.last_interrupt < 2:
+		lt, self.last_interrupt = self.last_interrupt, time()
+		if self.last_interrupt - lt < 5:
 			return self.stop()
-		print("Snapshoting (To exit interrupt twice within 2 sec)")
+		print("Snapshoting (To exit interrupt twice within 5 sec)")
 		self.force_snapshot = True
-		self.last_interrupt = time()
 
 	def run(self, nit, show_debug=False, print_interval=1, snap_interval=60):
 		import signal
 		from time import time
 		import numpy as np
 		from util import bcolors
+		from sys import stdout
 		self.running = True
 		avg_weight = 0.95
 
 		# Register interrupt
-		signal.signal(signal.SIGINT, lambda *a:self.try_stop())
+		old_sigint = signal.signal(signal.SIGINT, lambda *a:self.try_stop())
 
 		# Train
 		s = self.solver
@@ -114,8 +108,7 @@ class Solver:
 					print(' '*6+'diff\t', '  '.join(['%5.1g/%5.1g'%(np.sum(np.abs(l.blobs[0].diff)),np.sum(np.abs(l.blobs[-1].diff))) for l,n in lrs if len(l.blobs)>0]))
 					print()
 				self.on_display()
-				import sys
-				sys.stdout.flush()
+				stdout.flush()
 				last_it = it
 				t0 = time()
 			if self.snap_file is not None and (time()-t1 > snap_interval or self.force_snapshot):
@@ -125,6 +118,9 @@ class Solver:
 				t1 = time()
 			if not self.running:
 				break
+		# Reset the signal handler
+		signal.signal(signal.SIGINT, old_sigint)
+		
 		if self.final_file is not None:
 			s.net.save(self.final_file)
 		return s.net

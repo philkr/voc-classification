@@ -105,8 +105,14 @@ def dataAsImageDataLayer(voc_dir, tmp_dir, image_set='train', **kwargs):
 	return L.ImageData(source=source_file, ntop=2, new_width=cs, new_height=cs, **kwargs)[0], Py.LabelData(label=lbl_file, batch_size=kwargs.get('batch_size',1))
 
 def dataAsHDF5Layer(voc_dir, tmp_dir, image_set='train', **kwargs):
-	from os import path
+	import atexit
+	from os import path, remove
 	from caffe_all import L
+	def try_remove(*args, **kwargs):
+		try:
+			remove(*args, **kwargs)
+		except FileNotFoundError:
+			pass
 	
 	hf5_file = path.join(tmp_dir, image_set+"_data.hf5")
 	if not path.exists(hf5_file):
@@ -128,6 +134,8 @@ def dataAsHDF5Layer(voc_dir, tmp_dir, image_set='train', **kwargs):
 			# Write classification labels
 			f.create_dataset('/cls/%d'%i, data=lbl.astype(np.uint8))
 		f.close()
+		# Clean up the file
+		atexit.register(try_remove, hf5_file)
 	fast_hdf5_input_param = dict(source=hf5_file, batch_size=kwargs.get('batch_size', 1), group_name='data')
 	data = L.TransformingFastHDF5Input(fast_hdf5_input_param=fast_hdf5_input_param, transform_param = kwargs.get('transform_param', {}))
 	fast_hdf5_input_param = dict(source=hf5_file, batch_size=kwargs.get('batch_size', 1), group_name='cls')
