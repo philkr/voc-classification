@@ -1,0 +1,30 @@
+#!/bin/bash
+GPUS=$(nvidia-smi -L | sed 's/GPU \(.*\): .*UUID.*/\1/g')
+get_free_gpu () {
+#	GPUS=$(nvidia-smi -L | sed 's/.*(UUID: \(.*\))/\1/g')
+	for g in $GPUS
+	do
+		USAGE=$(nvidia-smi -i $g -q -d Utilization | grep Max | head -n 1 | sed 's/.*: \(.*\) %/\1/g')
+		if [ "$USAGE" -lt "50" ] && [ ! -f "/tmp/gpu_${g}_lock" ]; then
+			echo $g
+			return $g
+		fi
+	done
+	echo -1
+	return -1
+}
+wait_free_gpu () {
+	GPU=$(get_free_gpu)
+	while [ "$GPU" -eq "-1" ]
+	do
+		sleep 5
+		GPU=$(get_free_gpu)
+	done
+	echo $GPU
+	return $GPU
+}
+GPU=$(wait_free_gpu)
+date > /tmp/gpu_${GPU}_lock
+export GPU=$GPU
+GPU=$GPU eval $@
+rm /tmp/gpu_${GPU}_lock

@@ -20,6 +20,7 @@ parser.add_argument('-bs', type=int, default=16, help='batch size')
 parser.add_argument('-nit', type=int, default=80000, help='Number of training iterations')
 
 # Initialization parameters
+parser.add_argument('--no-mean', action='store_true', help='Do not mean center')
 parser.add_argument('--clip', default='drop7', help='clip the network at this layer')
 parser.add_argument('--train-from', default=None, help='Train only layers after this layer')
 parser.add_argument('--random-from', default='drop7', help='Initialize all layers after this layer randomly')
@@ -52,12 +53,18 @@ model = load.ProtoDesc(args.prototxt)
 
 # Create the training net
 ns = NetSpec()
-ns.data, ns.cls = dataLayer(args.voc_dir, output_dir, batch_size=args.bs, transform_param=dict(crop_size=model.input_dim[-1], min_scale=args.min_scale, max_scale=args.max_scale, mean_value=[104,117,123], mirror=True, scale=args.scale))
+mean_value = [104,117,123]
+if args.no_mean: mean_value = [0,0,0]
+ns.data, ns.cls = dataLayer(args.voc_dir, output_dir, batch_size=args.bs, transform_param=dict(crop_size=model.input_dim[-1], min_scale=args.min_scale, max_scale=args.max_scale, mean_value=mean_value, mirror=True, scale=args.scale))
 
 ns.fc8  = L.InnerProduct( model(data=ns.data, clip=args.clip), num_output=20, name='fc8_cls')
 ns.loss = Py.SigmoidCrossEntropyLoss(ns.fc8, ns.cls, ignore_label=255, loss_weight=1)
 
 #ns.prnt = Py.Print(ns.cls)
+
+
+#setLR(listAllTops(ns.fc8), 1, 2)
+#setDecay(listAllTops(ns.fc8), 1, 1)
 
 # Set the learning rates
 all_tops = listAllTops(ns.fc8)
@@ -71,6 +78,8 @@ for t in all_tops:
 	else:
 		setLR(t, 0, 0)
 		setDecay(t, 0, 0)
+if not train_t:
+	print("Something went wrong, not training any layers!")
 
 # Choose the GPU
 caffe.set_mode_gpu()
@@ -108,7 +117,7 @@ for N_CROP in [1, 10]:
 	for t in ['test', 'train']:
 		# Specify the eval net
 		ns = NetSpec()
-		ns.data, ns.cls = dataLayer(args.voc_dir, output_dir, batch_size=1, transform_param=dict(crop_size=model.input_dim[-1], min_scale=args.min_scale, max_scale=args.max_scale, mean_value=[104,117,123], mirror=True, scale=args.scale), image_set=t)
+		ns.data, ns.cls = dataLayer(args.voc_dir, output_dir, batch_size=1, transform_param=dict(crop_size=model.input_dim[-1], min_scale=args.min_scale, max_scale=args.max_scale, mean_value=mean_value, mirror=True, scale=args.scale), image_set=t)
 		ns.fc8  = L.InnerProduct( model(data=ns.data, clip=args.clip), num_output=20, name='fc8_cls')
 
 		# Create the eval net

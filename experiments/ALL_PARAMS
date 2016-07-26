@@ -1,0 +1,3 @@
+fc8 --train-from drop7
+all_fc --train-from pool5
+all
