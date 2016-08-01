@@ -1,3 +1,10 @@
+from __future__ import division
+from __future__ import print_function
+try:
+	FileNotFoundError
+except NameError:
+	FileNotFoundError = OSError # Python 2
+
 from python_layers import PyLayer
 import numpy as np
 

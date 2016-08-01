@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from argparse import ArgumentParser
 from glob import glob
 from os import path
