@@ -1,3 +1,6 @@
+from __future__ import division
+from __future__ import print_function
+
 # Train and evaluate a classification model for VOC2012
 import argparse
 import config
