@@ -1,5 +1,6 @@
 deepak /data/models/bvlc_reference_caffenet/deploy.prototxt /home/philkr/workspace/eval/deepak/pascalDrop_long.caffemodel
 xiaolong /data/models/bvlc_reference_caffenet/deploy.prototxt /home/philkr/workspace/fast-rcnn/xiaolong.caffemodel
-xiaolong_grey /data/models/bvlc_reference_caffenet/deploy.prototxt /home/philkr/workspace/fast-rcnn/xiaolong_grey.caffemodel
 imagenet /data/models/bvlc_reference_caffenet/deploy.prototxt /data/models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel
 jeff /home/philkr/workspace/eval/jeff/scale/alexnet/deploy.nolrn.prototxt /home/philkr/workspace/eval/jeff/scale/alexnet/alexnetgroup_ganencode_jointdiscrim_imagenet100u200.scaleshiftpm1.reinitfc.caffemodel --scale 0.00784313725
+jigsaw models/jigsaw.prototxt models/jigsaw.caffemodel
+color_no_mean /home/philkr/workspace/voc-classification/models/color.prototxt /home/philkr/workspace/voc-classification/models/color.caffemodel --no-mean

@@ -111,7 +111,7 @@ def dataAsImageDataLayer(voc_dir, tmp_dir, image_set='train', **kwargs):
 	cs = kwargs.get('transform_param',{}).get('crop_size',0)
 	return L.ImageData(source=source_file, ntop=2, new_width=cs, new_height=cs, **kwargs)[0], Py.LabelData(label=lbl_file, batch_size=kwargs.get('batch_size',1))
 
-def dataAsHDF5Layer(voc_dir, tmp_dir, image_set='train', **kwargs):
+def dataAsHDF5Layer(voc_dir, tmp_dir, image_set='train', resize=None, **kwargs):
 	import atexit
 	from os import path, remove
 	from caffe_all import L
@@ -135,6 +135,15 @@ def dataAsHDF5Layer(voc_dir, tmp_dir, image_set='train', **kwargs):
 		voc_data = VOCData(voc_dir, image_set)
 		for i in progress(range(len(voc_data))):
 			lbl, im = voc_data[i]
+			if resize is not None:
+				from skimage import transform
+				try:
+					W, H = resize
+				except:
+					W, H = resize, resize
+				im = transform.resize(im, (H,W))
+				im = (255*im).astype(np.uint8)
+			
 			# Read and write the image
 			f.create_dataset('/data/%d'%i, data=im[:,:,::-1].transpose((2,0,1)))
 			
@@ -160,7 +169,7 @@ def dataLayer(*args, **kwargs):
 		       "Warning: TransformingFastHDF5InputLayer not found. It is HIGHLY recommended\n"
 		       "that you get it, as ImageDataLayer doesn't support all the transformations \n"
 		       "required to train a good classifier. You can get it from here:             \n"
-		       "  https://github.com/philkr/caffe/tree/transforming_fast_hdf5              \n"
+		       "  https://github.com/philkr/caffe/tree/future                              \n"
 		       "---------------------------------------------------------------------------\n" )
 		from time import sleep
 		sleep(1)

@@ -30,6 +30,7 @@ parser.add_argument('--random-from', default='drop7', help='Initialize all layer
 parser.add_argument('--scale', type=float, default=1.0, help='Scale of the input data')
 parser.add_argument('--min-scale', type=float, default=0.5, help='Minimum scale transformation of image')
 parser.add_argument('--max-scale', type=float, default=2.0, help='Maximum scale transformation of image')
+parser.add_argument('--resize', type=int, help='Resize the images before passing them to the CNN')
 
 args = parser.parse_args()
 
@@ -58,7 +59,7 @@ model = load.ProtoDesc(args.prototxt)
 ns = NetSpec()
 mean_value = [104,117,123]
 if args.no_mean: mean_value = [0,0,0]
-ns.data, ns.cls = dataLayer(args.voc_dir, output_dir, batch_size=args.bs, transform_param=dict(crop_size=model.input_dim[-1], min_scale=args.min_scale, max_scale=args.max_scale, mean_value=mean_value, mirror=True, scale=args.scale))
+ns.data, ns.cls = dataLayer(args.voc_dir, output_dir, batch_size=args.bs, transform_param=dict(crop_size=model.input_dim[-1], min_scale=args.min_scale, max_scale=args.max_scale, mean_value=mean_value, mirror=True, scale=args.scale), resize=args.resize)
 
 ns.fc8  = L.InnerProduct( model(data=ns.data, clip=args.clip), num_output=20, name='fc8_cls')
 ns.loss = Py.SigmoidCrossEntropyLoss(ns.fc8, ns.cls, ignore_label=255, loss_weight=1)
@@ -120,7 +121,7 @@ for N_CROP in [1, 10]:
 	for t in ['test', 'train']:
 		# Specify the eval net
 		ns = NetSpec()
-		ns.data, ns.cls = dataLayer(args.voc_dir, output_dir, batch_size=1, transform_param=dict(crop_size=model.input_dim[-1], min_scale=args.min_scale, max_scale=args.max_scale, mean_value=mean_value, mirror=True, scale=args.scale), image_set=t)
+		ns.data, ns.cls = dataLayer(args.voc_dir, output_dir, batch_size=1, transform_param=dict(crop_size=model.input_dim[-1], min_scale=args.min_scale, max_scale=args.max_scale, mean_value=mean_value, mirror=True, scale=args.scale), image_set=t, resize=args.resize)
 		ns.fc8  = L.InnerProduct( model(data=ns.data, clip=args.clip), num_output=20, name='fc8_cls')
 
 		# Create the eval net
